@@ -7,6 +7,9 @@ import org.apache.commons.codec.binary.Base64;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.Security;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class EncryptionUtils {
     private static final String ALGORITHM = "AES";
@@ -23,19 +26,21 @@ public class EncryptionUtils {
         IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
         cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivParameterSpec);
         byte[] decryptedData = cipher.doFinal(data);
-        return new String(decryptedData);
+        return new String(decryptedData, "utf-8");
     }
     
     //Método para desencriptar los datos
     // Primero la clave, ya sea la el usuario o la clave diaria; después un String con el texto a desencriptar.
     public static String encrypt(String key, String data) throws Exception {
+        Security.addProvider(new BouncyCastleProvider());
         byte[] iv = new byte[16];
         new SecureRandom().nextBytes(iv);
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS7Padding", "BC");
+        //Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
         SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes("UTF-8"), "AES");
         IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
         cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, ivParameterSpec);
-        byte[] encryptedData = cipher.doFinal(data.getBytes());
+        byte[] encryptedData = cipher.doFinal(data.getBytes("utf-8"));
         byte[] ivAndEncryptedData = new byte[iv.length + encryptedData.length];
         System.arraycopy(iv, 0, ivAndEncryptedData, 0, iv.length);
         System.arraycopy(encryptedData, 0, ivAndEncryptedData, iv.length, encryptedData.length);
